@@ -1,0 +1,235 @@
+Common arguments:
+   --connect <jdbc-uri>                                       Specify JDBC connect string
+   --connection-manager <class-name>                          Specify connection manager class name
+   --connection-param-file <properties-file>                  Specify connection parameters file
+   --driver <class-name>                                      Manually  specify JDBC driver class to use
+   --hadoop-home <hdir>                                       Override $HADOOP_MAPR ED_HOME_ARG
+   --hadoop-mapred-home <dir>                                 Override $HADOOP_MAPR ED_HOME_ARG
+   --help                                                     Print usage instructions
+   --metadata-transaction-isolation-level <isolationlevel>    Defines the transaction isolation level for metadata queries. For more details check java.sql.Connection 	javadoc or the JDBC specificaiton
+   -P                                                         Read password from console
+   --password <password>                                      Set authentication password
+   --password-alias <password-alias>                          Credential provider password alias
+   --password-file <password-file>                            Set authentication password file path
+   --relaxed-isolation                                        Use read-uncommitted isolation for imports
+   --skip-dist-cache                                          Skip copying jars to distributed cache
+   --temporary-rootdir <rootdir>                              Defines the temporary root directory for the import
+   --username <username>                                      Set authentication username
+   --verbose                                                  Print more information while working
+
+Import control arguments:
+   --append                                                   Imports data
+                                                              in append
+                                                              mode
+   --as-avrodatafile                                          Imports data
+                                                              to Avro data
+                                                              files
+   --as-parquetfile                                           Imports data
+                                                              to Parquet
+                                                              files
+   --as-sequencefile                                          Imports data
+                                                              to
+                                                              SequenceFile
+                                                              s
+   --as-textfile                                              Imports data
+                                                              as plain
+                                                              text
+                                                              (default)
+   --autoreset-to-one-mapper                                  Reset the
+                                                              number of
+                                                              mappers to
+                                                              one mapper
+                                                              if no split
+                                                              key
+                                                              available
+   --boundary-query <statement>                               Set boundary
+                                                              query for
+                                                              retrieving
+                                                              max and min
+                                                              value of the
+                                                              primary key
+   --columns <col,col,col...>                                 Columns to
+                                                              import from
+                                                              table
+   --compression-codec <codec>                                Compression
+                                                              codec to use
+                                                              for import
+   --delete-target-dir                                        Imports data
+                                                              in delete
+                                                              mode
+   --direct                                                   Use direct
+                                                              import fast
+                                                              path
+   --direct-split-size <n>                                    Split the
+                                                              input stream
+                                                              every 'n'
+                                                              bytes when
+                                                              importing in
+                                                              direct mode
+-e,--query <statement>                                        Import
+                                                              results of
+                                                              SQL
+                                                              'statement'
+   --fetch-size <n>                                           Set number
+                                                              'n' of rows
+                                                              to fetch
+                                                              from the
+                                                              database
+                                                              when more
+                                                              rows are
+                                                              needed
+   --inline-lob-limit <n>                                     Set the
+                                                              maximum size
+                                                              for an
+                                                              inline LOB
+-m,--num-mappers <n>                                          Use 'n' map
+                                                              tasks to
+                                                              import in
+                                                              parallel
+   --mapreduce-job-name <name>                                Set name for
+                                                              generated
+                                                              mapreduce
+                                                              job
+   --merge-key <column>                                       Key column
+                                                              to use to
+                                                              join results
+   --split-by <column-name>                                   Column of
+                                                              the table
+                                                              used to
+                                                              split work
+                                                              units
+   --split-limit <size>                                       Upper Limit
+                                                              of rows per
+                                                              split for
+                                                              split
+                                                              columns of
+                                                              Date/Time/Ti
+                                                              mestamp and
+                                                              integer
+                                                              types. For
+                                                              date or
+                                                              timestamp
+                                                              fields it is
+                                                              calculated
+                                                              in seconds.
+                                                              split-limit
+                                                              should be
+                                                              greater than
+                                                              0
+   --table <table-name>                                       Table to
+                                                              read
+   --target-dir <dir>                                         HDFS plain
+                                                              table
+                                                              destination
+   --validate                                                 Validate the
+                                                              copy using
+                                                              the
+                                                              configured
+                                                              validator
+   --validation-failurehandler <validation-failurehandler>    Fully
+                                                              qualified
+                                                              class name
+                                                              for
+                                                              ValidationFa
+                                                              ilureHandler
+   --validation-threshold <validation-threshold>              Fully
+                                                              qualified
+                                                              class name
+                                                              for
+                                                              ValidationTh
+                                                              reshold
+   --validator <validator>                                    Fully
+                                                              qualified
+                                                              class name
+                                                              for the
+                                                              Validator
+   --warehouse-dir <dir>                                      HDFS parent
+                                                              for table
+                                                              destination
+   --where <where clause>                                     WHERE clause
+                                                              to use
+                                                              during
+                                                              import
+-z,--compress                                                 Enable
+                                                              compression
+
+Incremental import arguments:
+   --check-column <column>        Source column to check for incremental
+                                  change
+   --incremental <import-type>    Define an incremental import of type
+                                  'append' or 'lastmodified'
+   --last-value <value>           Last imported value in the incremental
+                                  check column
+
+Output line formatting arguments:
+   --enclosed-by <char>               Sets a required field enclosing
+                                      character
+   --escaped-by <char>                Sets the escape character
+   --fields-terminated-by <char>      Sets the field separator character
+   --lines-terminated-by <char>       Sets the end-of-line character
+   --mysql-delimiters                 Uses MySQL's default delimiter set:
+                                      fields: ,  lines: \n  escaped-by: \
+                                      optionally-enclosed-by: '
+   --optionally-enclosed-by <char>    Sets a field enclosing character
+
+Input parsing arguments:
+   --input-enclosed-by <char>               Sets a required field encloser
+   --input-escaped-by <char>                Sets the input escape
+                                            character
+   --input-fields-terminated-by <char>      Sets the input field separator
+   --input-lines-terminated-by <char>       Sets the input end-of-line
+                                            char
+   --input-optionally-enclosed-by <char>    Sets a field enclosing
+                                            character
+
+Hive arguments:
+   --create-hive-table                         Fail if the target hive
+                                               table exists
+   --hive-compute-stats                        Overwrite existing data in
+                                               the Hive table
+   --hive-database <database-name>             Sets the database name to
+                                               use when importing to hive
+   --hive-delims-replacement <arg>             Replace Hive record \0x01
+                                               and row delimiters (\n\r)
+                                               from imported string fields
+                                               with user-defined string
+   --hive-drop-import-delims                   Drop Hive record \0x01 and
+                                               row delimiters (\n\r) from
+                                               imported string fields
+   --hive-home <dir>                           Override $HIVE_HOME
+   --hive-import                               Import tables into Hive
+                                               (Uses Hive's default
+                                               delimiters if none are
+                                               set.)
+   --hive-overwrite                            Overwrite existing data in
+                                               the Hive table
+   --hive-partition-key <partition-key>        Sets the partition key to
+                                               use when importing to hive
+   --hive-partition-value <partition-value>    Sets the partition value to
+                                               use when importing to hive
+   --hive-table <table-name>                   Sets the table name to use
+                                               when importing to hive
+   --map-column-hive <arg>                     Override mapping for
+                                               specific column to hive
+                                               types.
+
+Code generation arguments:
+   --bindir <dir>                        Output directory for compiled
+                                         objects
+   --class-name <name>                   Sets the generated class name.
+                                         This overrides --package-name.
+                                         When combined with --jar-file,
+                                         sets the input class.
+   --input-null-non-string <null-str>    Input null non-string
+                                         representation
+   --input-null-string <null-str>        Input null string representation
+   --jar-file <file>                     Disable code generation; use
+                                         specified jar
+   --map-column-java <arg>               Override mapping for specific
+                                         columns to java types
+   --null-non-string <null-str>          Null non-string representation
+   --null-string <null-str>              Null string representation
+   --outdir <dir>                        Output directory for generated
+                                         code
+   --package-name <name>                 Put auto-generated classes in
+                                         this package
