@@ -46,6 +46,8 @@ It is primarily used to load or query log tables while running Sqoop jobs at reg
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
 '''
 
+
+
 sqoop eval \
 --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
 --username retail_user \
@@ -565,3 +567,73 @@ Let us see the purpose of --boundary-query
 		We can address the issue of outliers by narrowing down using where clause in --boundary-query
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
 '''
+
+hadoop fs -rm -R /user/nandanasgn/nsqoop_import/retail_db/*
+
+sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --table order_items \
+  --warehouse-dir /user/nandanasgn/nsqoop_import/retail_db \
+  --boundary-query 'select 100000, 172198'
+  
+sqoop eval \
+--connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+--username retail_user \
+--password itversity \
+--query 'select min(order_item_id), min(order_item_id) from order_items group by order_item_order_id having sum(order_item_subtotal) > 300'
+  
+sqoop import \
+--connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+--username retail_user \
+--password itversity \
+--table order_items \
+--warehouse-dir user/nandanasgn/nsqoop_import/retail_db \
+--boundary-query 'select min(order_item_id), min(order_item_id) from order_items group by order_item_order_id having sum(order_item_subtotal) > 300'
+'''
+18/12/07 04:15:30 INFO db.DataDrivenDBInputFormat: BoundingValsQuery: select min(order_item_id), min(order_item_id) from order_items group by order_item_order_id having sum(order_item_subtotal) > 300
+...
+...
+18/12/07 04:15:47 INFO mapreduce.ImportJobBase: Transferred 25 bytes in 25.5958 seconds (0.9767 bytes/sec)
+18/12/07 04:15:47 INFO mapreduce.ImportJobBase: Retrieved 1 records.
+'''
+
+#select min(order_item_id), min(order_item_id),order_item_order_id from order_items group by order_item_order_id having sum(order_item_subtotal) > 1000
+
+#select * from order_items where order_item_order_id =  68703 order by order_item_id
+
+
+'''
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+TRANSFORMING DATA DURING SQOOP IMPORT
+
+We can also apply some basic transformations as part of Sqoop Import
+
+ * Specify columns we want to extract using --columns
+ * We can pass custom query instead of table using --query
+ * When --query is used we need to specify --split-by or set --num-mappers to 1; we cannot set num-mappers more than 1 if we dont specify the --split-by
+
+-----------------------
+* THINGS TO REMEMBER *
+-----------------------
+ * --table and --query are MUTUALLY EXCLUSIVE
+ * --columns and --query are MUTUALLY EXCLUSIVE
+ * while using --columns --> the column names should be comma seperated, and should not have any other characters(not even space) in the comma seperated list
+ * --columns is mostly used for vertical slicing of the table; if --split-by is unspecified, the partition will still happen on the table-defined PK; complete metadata of the table (all columns) is collected during creation of the table POJO jar. 
+ * --query is often used to import data that is the resultant of join b/w two or more tables , and/or has transformations on the columns (eg. sum(col1), col1||col2 etc.)
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+'''
+
+hadoop fs -rm -R /user/nandanasgn/user/nandanasgn/nsqoop_import/retail_db/*
+
+sqoop import \
+--connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+--username retail_user \
+--password itversity \
+--table order_items \
+--columns order_item_order_id,order_item_id,order_item_quantity \
+--warehouse-dir user/nandanasgn/nsqoop_import/retail_db
+
+ hadoop fs -rm -R /user/nandanasgn/user/nandanasgn/nsqoop_import/retail_db/*
