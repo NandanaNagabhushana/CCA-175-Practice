@@ -622,6 +622,8 @@ We can also apply some basic transformations as part of Sqoop Import
  * while using --columns --> the column names should be comma seperated, and should not have any other characters(not even space) in the comma seperated list
  * --columns is mostly used for vertical slicing of the table; if --split-by is unspecified, the partition will still happen on the table-defined PK; complete metadata of the table (all columns) is collected during creation of the table POJO jar. 
  * --query is often used to import data that is the resultant of join b/w two or more tables , and/or has transformations on the columns (eg. sum(col1), col1||col2 etc.)
+ * when --query is used, --warehouse-dir cannot be used, because --table is not being specified anymore, and the engine will not understand the directory into which the file as to be placed . Therefore, --target-dir should be used with --query
+ * when using --query, "and \$CONDITIONS" has to be appended to where clause. This is only for syntactical correctness.
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
 '''
@@ -637,3 +639,75 @@ sqoop import \
 --warehouse-dir user/nandanasgn/nsqoop_import/retail_db
 
  hadoop fs -rm -R /user/nandanasgn/user/nandanasgn/nsqoop_import/retail_db/*
+ 
+ 
+sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --target-dir /user/dgadiraju/sqoop_import/retail_db/orders_with_revenue \
+  --num-mappers 2 \
+  --query 'select o.*, sum(oi.order_item_subtotal) order_revenue from orders o join order_items oi on o.order_id = oi.order_item_order_id and \$CONDITIONS group by o.order_id, o.order_date, o.order_customer_id, o.order_status' \
+  --split-by order_id
+ 
+ 
+ '''
+ Let us get into controlling the imports
+
+Specifying delimiters - 
+	--enclosed-by <char>			Sets a required field enclosing character
+	--escaped-by <char>				Sets the escape character
+	--fields-terminated-by <char>	Sets the field separator character
+	--lines-terminated-by <char>	Sets the end-of-line character
+	--optionally-enclosed-by <char>	Sets a field enclosing character
+	--mysql-delimiters	            Uses MySQL’s default delimiter set: 
+											fields: , 
+											lines: \n 
+											escaped-by: \ 
+											optionally-enclosed-by: '	
+
+Handling nulls - 
+	--null-string <null-string>      The string to be written for a null value for string columns
+	--null-non-string <null-string>  The string to be written for a null value for non-string column
+
+
+'''
+hadoop fs -rm -R /user/nandanasgn/nsqoop_import/hr_db
+
+#Default behavior
+sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/hr_db \
+  --username hr_user \
+  --password itversity \
+  --table employees \
+  --warehouse-dir /user/nandanasgn/nsqoop_import/hr_db
+  
+hadoop fs -ls /user/nandanasgn/nsqoop_import/hr_db/*  
+
+hadoop fs -tail /user/nandanasgn/nsqoop_import/hr_db/employees/part-m-00000
+
+hadoop fs -get /user/nandanasgn/nsqoop_import/hr_db/employees #getting/copying the files from 
+#hdfs to local file system; here the target is current directory  
+
+hadoop fs -get /user/nandanasgn/nsqoop_import/hr_db/employees /home/nandanasgn/nsqoop_import
+
+view /home/nandanasgn/nsqoop_import/employees/part-m-00000
+  
+#Changing default delimiters and nulls
+sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/hr_db \
+  --username hr_user \
+  --password itversity \
+  --table employees \
+  --warehouse-dir /user/nandanasgn/nsqoop_import/hr_db_delimiters \
+  --null-non-string -1 \
+  --fields-terminated-by "\000" \
+  --lines-terminated-by ":"
+  
+hadoop fs -ls /user/nandanasgn/nsqoop_import/hr_db_delimiters/*  
+
+hadoop fs -get /user/nandanasgn/nsqoop_import/hr_db_delimiters /home/nandanasgn/nsqoop_import
+
+ls -ltr /home/nandanasgn/nsqoop_import/hr_db_delimiters
+
+view /home/nandanasgn/nsqoop_import/hr_db_delimiters/employees/part-m-00000
