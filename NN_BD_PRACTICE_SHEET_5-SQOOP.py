@@ -274,4 +274,147 @@ sqoop export \
 --columns order_date,revenue \
 --input-fields-terminated-by "\001" \
 --num-mappers 1
+
+'''
+--------------------------------------------------------------------------------------------
+SQOOP EXPORT --> INVOKING A STORED PROCEDURE   --call
+--------------------------------------------------------------------------------------------
+
+!!!!   READ THROUGH , NO DEMO !!!! CHECK FOR ANY EXAMPLE USING MYSQL as the TARGET DATABASE
+
+--call <stored-proc-name>	Stored Procedure to call
+'''
+
+
+
+
+'''
+--------------------------------------------------------------------------------------------
+SQOOP EXPORT --> UPDATING DATA - UPSERT/MERGE
+--------------------------------------------------------------------------------------------
+
+As part of this topic we will see, how we can upsert/merge data from HDFS to MySQL tables. Also we will understand the relevance of stage tables as part of upsert process.
+
+
+--update-key <col-name>		Anchor column to use for updates. Use a comma separated list of columns if there are more than one column.
+--update-mode <mode>		Specify how updates are performed when new rows are found with non-matching keys in database.
+
+By default, sqoop-export appends new rows to a table; each input record is transformed into an INSERT statement that adds a row to the target database table. If your table has constraints (e.g., a primary key column whose values must be unique) and already contains data, you must take care to avoid inserting records that violate these constraints. The export process will fail if an INSERT statement fails. This mode is primarily intended for exporting records to a new, empty table intended to receive these results.
+
+If you specify the --update-key argument, Sqoop will instead modify an existing dataset in the database. Each input record is treated as an UPDATE statement that modifies an existing row. The row a statement modifies is determined by the column name(s) specified with --update-key.
+
+If an UPDATE statement modifies no rows, this is not considered an error; the export will silently continue. (In effect, this means that an update-based export will not insert new rows into the database.) Likewise, if the column specified with --update-key does not uniquely identify rows and multiple rows are updated by a single statement, this condition is also undetected.
+
+The argument --update-key can also be given a comma separated list of column names. In which case, Sqoop will match all keys from this list before updating any existing record.
+
+Depending on the target database, you may also specify the --update-mode argument with allowinsert mode if you want to update rows if they exist in the database already or insert rows if they do not exist yet.
+
+
+'''
+
+
+create table daily_revenue_demo (
+     revenue float,
+     order_date varchar(30) primary key
+);
+# issuing first export  
+sqoop export \
+--connect jdbc:mysql://ms.itversity.com:3306/retail_export \
+--username retail_user \
+--password itversity \
+--export-dir /apps/hive/warehouse/dgadiraju_sqoop_import.db/daily_revenue \
+--table daily_revenue_demo \
+--columns order_date,revenue \
+--input-fields-terminated-by "\001" \
+--num-mappers 2
+
+#issuing the same export second time
+sqoop export \
+--connect jdbc:mysql://ms.itversity.com:3306/retail_export \
+--username retail_user \
+--password itversity \
+--export-dir /apps/hive/warehouse/dgadiraju_sqoop_import.db/daily_revenue \
+--table daily_revenue_demo \
+--columns order_date,revenue \
+--input-fields-terminated-by "\001" \
+--num-mappers 2
+
+# complains about the duplicate entry on the primary key column
+# the default behavior is INSERT; to change this to UPDATE, --update-key argument has to be used along with list of comma seperated column-names on which the lookup 
+# will be performed. By doing so, only updates will be performed, and if there are new records to be inserted, they will be ignored. Also, if multiple records are updated for a lookup key, it is ignored, and no error is thrown out.
+
+# therefore --update-key <col-list>  ==> UPDATES ONLY
+
+sqoop export \
+--connect jdbc:mysql://ms.itversity.com:3306/retail_export \
+--username retail_user \
+--password itversity \
+--export-dir /apps/hive/warehouse/dgadiraju_sqoop_import.db/daily_revenue \
+--table daily_revenue_demo \
+--columns order_date,revenue \
+--input-fields-terminated-by "\001" \
+--num-mappers 2
+--update-key order_date
+
+
+# --update-mode ==> allows UPSERT/MERGE  -> to be used with --update-key
+# legal values for mode : updateonly  ==> allows updates only ; synonymous to --update-key  
+#                         allowinsert ==> for upsert/merge 
+
+sqoop export \
+--connect jdbc:mysql://ms.itversity.com:3306/retail_export \
+--username retail_user \
+--password itversity \
+--export-dir /apps/hive/warehouse/dgadiraju_sqoop_import.db/daily_revenue \
+--table daily_revenue_demo \
+--columns order_date,revenue \
+--input-fields-terminated-by "\001" \
+--num-mappers 2
+--update-key order_date
+--update-mode allowinsert
+
+
+'''
+--------------------------------------------------------------------------------------------
+SQOOP EXPORT --> STAGE TABLES
+--------------------------------------------------------------------------------------------
+
+staging tables are used in sqoop export for graceful degradation. If a sqoop export fails, the destination table will be in inconsistent state. If an intermediate staging table is used to dump the complete data, and only on successful completion of all the mappers, the entire data in the staging table will be transferred into the target table  
+
+--staging-table <staging-table-name>	The table in which data will be staged before being inserted into the destination table.
+--clear-staging-table					Indicates that any data present in the staging table can be deleted.
+
+simulate a scenario -->
+ 1. create a stage table in the db that has the same structure (or a structure that complies to the structure of the target table); generally this table should be empty during the sqoop-export
  
+ 2. insert a record into the target table with the key column value that has to be exported --> this has to generate a duplicate key error
+ 
+ 3. perform a sqoop-export onto the target table without using the staging-table -> this will lead to an inconsistent upload , there will be a failure in one of the jobs. 
+ 
+ To overcome this, add --staging-table to the export; the data will be first staged into the table specified as the staging-table, and then will get migrated itno the target table only if there is no exception raised.
+ 
+ 4. when the staging table is not empty, another exception will be thrown out stating so. for this add an additional argument --clear-staging-table
+
+ ** note ** - on a successful export, even when the --clear-staging-table is not specified, the staging table gets truncated. But when sqoop-export is unsuccessful, and a staging table is specified, the staged data is left in the satging table inorder to allow debugging. At times, it can also be a case that, when the debugging is done, the data from the stage-table can be manually, directly transferred into the target table, without doing the sqoop export.
+
+'''
+
+
+create table nn_daily_revenue_h(
+  order_date varchar(30),
+  revenue float
+);
+
+create table nn_daily_revenue_stage(
+  order_date varchar(30),
+  revenue float
+);
+
+sqoop export \
+--connect jdbc:mysql://ms.itversity.com:3306/retail_export \
+--username retail_user \
+--password itversity \
+--export-dir /apps/hive/warehouse/nsgn_hive_db.db/daily_revenue \
+--table nn_daily_revenue_h \
+--input-fields-terminated-by "\001" \
+--staging-table nn_daily_revenue_stage
